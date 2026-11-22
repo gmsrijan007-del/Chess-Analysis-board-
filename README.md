@@ -1,11 +1,11 @@
-# Boardroom — Free Chess Analyzer
+# Chess
 
-A small, free-to-run chess analysis website built with Flask, python-chess, and Stockfish. Drag pieces to explore a position, then ask Stockfish for an evaluation and suggested move.
+A minimal chessboard website with position analysis from Stockfish. Drag pieces to make moves and press **Analyze position** to see the engine's suggested move and evaluation.
 
 ## Run locally
 
-1. Install Python 3.10+ and [Stockfish](https://stockfishchess.org/download/). Stockfish must be installed separately from the Python packages.
-2. Install the app dependencies:
+1. Install Python 3.10+ and install **Stockfish 19** for your operating system.
+2. Install the Python packages:
 
    ```bash
    python -m venv .venv
@@ -13,17 +13,14 @@ A small, free-to-run chess analysis website built with Flask, python-chess, and 
    pip install -r requirements.txt
    ```
 
-3. If the `stockfish` executable is not on your PATH, set `STOCKFISH_PATH` to its location.
-4. Start the website:
+3. Start the app:
 
    ```bash
    python app.py
    ```
 
-5. Open http://localhost:5000.
+4. Open http://localhost:5000.
 
-Set `ENGINE_DEPTH` to change search depth (default: 15), and `PORT` to change the web server port. The first analysis starts the Stockfish process. The web page uses CDN-hosted chessboard assets, so an internet connection is needed to load those assets.
+The server looks for an executable named `stockfish` on `PATH`. If your Stockfish 19 binary is elsewhere, set `STOCKFISH_PATH` to its full path before starting the app. The engine is run on the server; it is not bundled in this repository. The web page loads board assets from CDNs, so an internet connection is needed.
 
-## Note
-
-This repository contains the website source, not a hosted website. To make it publicly accessible, deploy it on a Python host and install/provide a compatible Stockfish binary there. Do not expose Flask's development server as a production server.
+For deployment, use a Python host that allows a Stockfish 19 executable and run Flask behind a production WSGI server.
