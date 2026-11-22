@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101611">
+  <title>Boardroom — Free Chess Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard.min.css">
+  <style>
+    :root { color-scheme: dark; --bg: #101611; --panel: #19221b; --panel-2: #202b22; --line: #303d32; --text: #f3f0e8; --muted: #9da99c; --green: #b8d7a2; --green-dark: #283b2b; --gold: #e2c47a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% -20%, #26382a 0, transparent 48%), var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .shell { max-width: 1080px; margin: auto; padding: 28px 24px 50px; }
+    header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 42px; }
+    .brand { display:flex; align-items:center; gap:11px; font-size:14px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+    .brand-mark { display:grid; place-items:center; width:34px; height:34px; border:1px solid #536a50; border-radius:10px; color:var(--green); font-size:21px; }
+    .free-tag { border:1px solid var(--line); padding:7px 11px; border-radius:999px; color:var(--muted); font-size:12px; }
+    .intro { text-align:center; margin-bottom:30px; }
+    h1 { margin:0 0 9px; font:700 clamp(32px, 5vw, 48px)/1.1 'Playfair Display', serif; letter-spacing:-.03em; }
+    .intro p { color:var(--muted); margin:0; font-size:15px; }
+    .layout { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(290px, .8fr); gap:22px; align-items:start; }
+    .card { background:linear-gradient(145deg, #1d281f, var(--panel)); border:1px solid var(--line); border-radius:18px; box-shadow:0 22px 60px #0003; }
+    .board-card { padding:20px; }
+    .board-top, .board-bottom { display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:12px; }
+    .board-top { margin-bottom:13px; }
+    .board-bottom { margin-top:13px; }
+    .turn { display:flex; align-items:center; gap:8px; color:var(--text); font-weight:600; }
+    .turn-dot { width:9px; height:9px; background:var(--green); border-radius:50%; box-shadow:0 0 12px #b8d7a266; }
+    #board { width:100%; overflow:hidden; border-radius:7px; }
+    .controls { display:flex; gap:10px; margin-top:19px; }
+    button { font:600 14px 'DM Sans', sans-serif; cursor:pointer; transition:transform .15s, background .15s, border-color .15s; }
+    button:hover { transform:translateY(-1px); }
+    button:disabled { opacity:.55; cursor:wait; transform:none; }
+    .primary { flex:1; border:0; border-radius:10px; padding:13px 15px; background:var(--green); color:#172018; }
+    .primary:hover { background:#cae4b7; }
+    .secondary { border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:var(--panel-2); color:var(--text); }
+    .secondary:hover { border-color:#687868; }
+    .analysis-card { padding:22px; }
+    .section-label { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    .analysis-heading { margin:8px 0 20px; font:600 23px 'Playfair Display', serif; }
+    .result-box { min-height:102px; border:1px solid var(--line); border-radius:12px; background:#141c16; padding:16px; }
+    .result-title { color:var(--muted); font-size:12px; margin-bottom:10px; }
+    .result-value { font-size:21px; font-weight:700; }
+    .result-value.green { color:var(--green); }
+    .result-sub { margin-top:4px; color:var(--muted); font-size:12px; }
+    .divider { border:0; border-top:1px solid var(--line); margin:18px 0; }
+    .tip { display:flex; gap:11px; color:var(--muted); font-size:13px; line-height:1.55; }
+    .tip-icon { color:var(--gold); font-size:17px; }
+    #status { min-height:20px; margin:12px 0 0; font-size:13px; color:var(--muted); }
+    #status.error { color:#f1a49a; }
+    footer { margin-top:24px; text-align:center; color:#738073; font-size:12px; }
+    @media (max-width:760px) { .shell{padding:20px 14px 36px} header{margin-bottom:30px} .layout{grid-template-columns:1fr; max-width:520px; margin:auto} .intro{margin-bottom:23px} .board-card{padding:14px} .analysis-card{padding:19px} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark">♞</span> Boardroom</div>
+      <span class="free-tag">Free chess analysis</span>
+    </header>
+    <section class="intro">
+      <h1>Make your next move count.</h1>
+      <p>Play through a position and let Stockfish help you see the board.</p>
+    </section>
+    <section class="layout" aria-label="Chess analyzer">
+      <div class="card board-card">
+        <div class="board-top"><span>YOUR POSITION</span><span class="turn"><span class="turn-dot" id="turn-dot"></span><span id="turn-label">White to move</span></span></div>
+        <div id="board" aria-label="Interactive chessboard"></div>
+        <div class="board-bottom"><span>Drag a piece to make a move</span><span id="move-count">Move 1</span></div>
+        <div class="controls">
+          <button class="primary" id="analyze-button" onclick="analyzePosition()">♟ &nbsp; Analyze position</button>
+          <button class="secondary" onclick="undoMove()" aria-label="Undo last move" title="Undo last move">↶ Undo</button>
+          <button class="secondary" onclick="resetGame()">Reset</button>
+        </div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </div>
+      <aside class="card analysis-card">
+        <div class="section-label">Engine insight</div>
+        <h2 class="analysis-heading">Position analysis</h2>
+        <div class="result-box">
+          <div class="result-title">Evaluation (from side to move)</div>
+          <div class="result-value green" id="eval">—</div>
+          <div class="result-sub">A positive score favors the player to move.</div>
+        </div>
+        <hr class="divider">
+        <div class="result-box">
+          <div class="result-title">Suggested move</div>
+          <div class="result-value" id="move">—</div>
+          <div class="result-sub" id="move-uci">Run an analysis to see Stockfish's choice.</div>
+        </div>
+        <hr class="divider">
+        <div class="tip"><span class="tip-icon">✦</span><span>Move pieces around freely, then analyze again. The engine searches each position to depth 15.</span></div>
+      </aside>
+    </section>
+    <footer>Free to use · Analysis powered by Stockfish</footer>
+  </main>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard.min.js"></script>
+  <script>
+    const game = new Chess();
+    const board = Chessboard('board', {
+      draggable: true,
+      position: 'start',
+      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+      onDragStart: function(source, piece) {
+        if (game.game_over() || (game.turn() === 'w' && piece.startsWith('b')) || (game.turn() === 'b' && piece.startsWith('w'))) return false;
+      },
+      onDrop: function(source, target) {
+        const move = game.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+        clearAnalysis();
+        updateLabels();
+      },
+      onSnapEnd: function() { board.position(game.fen()); }
+    });
+
+    function updateLabels() {
+      const whiteToMove = game.turn() === 'w';
+      document.getElementById('turn-label').textContent = whiteToMove ? 'White to move' : 'Black to move';
+      document.getElementById('turn-dot').style.background = whiteToMove ? '#f3f0e8' : '#687568';
+      document.getElementById('move-count').textContent = 'Move ' + (Math.floor(game.history().length / 2) + 1);
+    }
+    function clearAnalysis() {
+      document.getElementById('eval').textContent = '—';
+      document.getElementById('move').textContent = '—';
+      document.getElementById('move-uci').textContent = 'Run an analysis to see Stockfish\'s choice.';
+      setStatus('');
+    }
+    function setStatus(message, isError) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.classList.toggle('error', Boolean(isError));
+    }
+    function undoMove() {
+      if (game.undo()) { board.position(game.fen()); clearAnalysis(); updateLabels(); }
+    }
+    function resetGame() {
+      game.reset(); board.start(); clearAnalysis(); updateLabels();
+    }
+    async function analyzePosition() {
+      const button = document.getElementById('analyze-button');
+      button.disabled = true;
+      button.textContent = 'Analyzing…';
+      setStatus('Stockfish is thinking…');
+      try {
+        const response = await fetch('/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fen: game.fen() })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Analysis failed. Please try again.');
+        document.getElementById('eval').textContent = data.evaluation;
+        document.getElementById('move').textContent = data.best_move;
+        document.getElementById('move-uci').textContent = 'UCI: ' + data.best_move_uci;
+        setStatus('Analysis complete.');
+      } catch (error) {
+        setStatus(error.message || 'Could not reach the analyzer.', true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '♟ &nbsp; Analyze position';
+      }
+    }
+    updateLabels();
+    window.addEventListener('resize', function() { board.resize(); });
+  </script>
+</body>
+</html>
